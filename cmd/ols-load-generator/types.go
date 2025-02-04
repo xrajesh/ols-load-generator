@@ -15,4 +15,5 @@ type TestConfig struct {
 	ESIndex    string        `json:"esindex"`
 	MetricStep int           `json:"metricstep"`
 	Profiles   []string      `json:"profiles"`
+	QueryOnly  bool          `json:"queryonly"`
 }

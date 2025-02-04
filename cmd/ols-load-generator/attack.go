@@ -74,6 +74,12 @@ var AttackCmd = &cli.Command{
 			Value:   "attacker/assets/profiles/metrics-report.yaml,attacker/assets/profiles/metrics-timeseries.yaml",
 			EnvVars: []string{"OLS_TEST_PROFILES"},
 		},
+		&cli.BoolFlag{
+			Name:    "queryonly",
+			Usage:   "--query",
+			Value:   false,
+			EnvVars: []string{"OLS_TEST_QUERY_ONLY"},
+		},
 	},
 }
 
@@ -89,6 +95,7 @@ func attackConfig(c *cli.Context) *TestConfig {
 		ESHost:     c.String("eshost"),
 		ESIndex:    c.String("esindex"),
 		MetricStep: c.Int("metricstep"),
+		QueryOnly:  c.Bool("queryonly"),
 		Profiles:   strings.Split(strings.TrimSpace(profilesArg), ","),
 	}
 }
@@ -123,60 +130,75 @@ func orchestrateWorkload(ctx context.Context, conf *TestConfig) error {
 	var requests []map[string]interface{}
 	var err error
 	attackMap := map[string]string{
-		"Uuid":     conf.Uuid,
-		"Workers":  strconv.Itoa(conf.Workers),
-		"Duration": conf.Duration.String(),
-		"ESHost":   conf.ESHost,
-		"ESIndex":  conf.ESIndex,
-		"Host":     conf.Host,
+		"Uuid":      conf.Uuid,
+		"Workers":   strconv.Itoa(conf.Workers),
+		"Duration":  conf.Duration.String(),
+		"ESHost":    conf.ESHost,
+		"ESIndex":   conf.ESIndex,
+		"Host":      conf.Host,
+		"QueryOnly": strconv.FormatBool(conf.QueryOnly),
 	}
 
-	requests = attacker.CreateReadinessRequests(ctx, conf.Duration, conf.Workers, conf.Host)
-	err = attacker.RunVegeta(ctx, requests, "get_readiness", attackMap)
-	if err != nil {
-		return fmt.Errorf("Error while running GET operation on /readiness: %w", err)
+	if !conf.QueryOnly {
+		requests = attacker.CreateReadinessRequests(ctx, conf.Duration, conf.Workers, conf.Host)
+		err = attacker.RunVegeta(ctx, requests, "get_readiness", attackMap)
+		if err != nil {
+			return fmt.Errorf("Error while running GET operation on /readiness: %w", err)
+		}
+
+		requests = attacker.CreateLivenessRequests(ctx, conf.Duration, conf.Workers, conf.Host)
+		err = attacker.RunVegeta(ctx, requests, "get_liveness", attackMap)
+		if err != nil {
+			return fmt.Errorf("Error while running GET operation on /liveness: %w", err)
+		}
+
+		requests = attacker.CreateAuthorizedRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken)
+		err = attacker.RunVegeta(ctx, requests, "post_authorized", attackMap)
+		if err != nil {
+			return fmt.Errorf("Error while running POST operation on /authorized: %w", err)
+		}
+
+		requests = attacker.CreateMetricsRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken)
+		err = attacker.RunVegeta(ctx, requests, "get_metrics", attackMap)
+		if err != nil {
+			return fmt.Errorf("Error while running GET operation on /metrics: %w", err)
+		}
+
+		requests = attacker.CreateGetFeedbackStatusRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken)
+		err = attacker.RunVegeta(ctx, requests, "get_feedback_status", attackMap)
+		if err != nil {
+			return fmt.Errorf("Error while running GET operation on /v1/feedback/status: %w", err)
+		}
+
+		requests = attacker.CreateFeedbackRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken)
+		err = attacker.RunVegeta(ctx, requests, "post_feedback", attackMap)
+		if err != nil {
+			return fmt.Errorf("Error while running POST operation on /v1/feedback: %w", err)
+		}
 	}
 
-	requests = attacker.CreateLivenessRequests(ctx, conf.Duration, conf.Workers, conf.Host)
-	err = attacker.RunVegeta(ctx, requests, "get_liveness", attackMap)
-	if err != nil {
-		return fmt.Errorf("Error while running GET operation on /liveness: %w", err)
-	}
-
-	requests = attacker.CreateAuthorizedRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken)
-	err = attacker.RunVegeta(ctx, requests, "post_authorized", attackMap)
-	if err != nil {
-		return fmt.Errorf("Error while running POST operation on /authorized: %w", err)
-	}
-
-	requests = attacker.CreateMetricsRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken)
-	err = attacker.RunVegeta(ctx, requests, "get_metrics", attackMap)
-	if err != nil {
-		return fmt.Errorf("Error while running GET operation on /metrics: %w", err)
-	}
-
-	requests = attacker.CreateGetFeedbackStatusRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken)
-	err = attacker.RunVegeta(ctx, requests, "get_feedback_status", attackMap)
-	if err != nil {
-		return fmt.Errorf("Error while running GET operation on /v1/feedback/status: %w", err)
-	}
-
-	requests = attacker.CreateFeedbackRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken)
-	err = attacker.RunVegeta(ctx, requests, "post_feedback", attackMap)
-	if err != nil {
-		return fmt.Errorf("Error while running POST operation on /v1/feedback: %w", err)
-	}
-
-	requests = attacker.CreateQueryRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken, false)
+	requests = attacker.CreateQueryRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken, false, false)
 	err = attacker.RunVegeta(ctx, requests, "post_query", attackMap)
 	if err != nil {
 		return fmt.Errorf("Error while running POST operation on /v1/query: %w", err)
 	}
 
-	requests = attacker.CreateQueryRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken, true)
+	requests = attacker.CreateQueryRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken, false, true)
+	err = attacker.RunVegeta(ctx, requests, "post_streaming_query", attackMap)
+	if err != nil {
+		return fmt.Errorf("Error while running POST operation on /v1/streaming_query: %w", err)
+	}
+
+	requests = attacker.CreateQueryRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken, true, false)
 	err = attacker.RunVegeta(ctx, requests, "post_query_with_cache", attackMap)
 	if err != nil {
 		return fmt.Errorf("Error while running POST operation on /v1/query with cache: %w", err)
+	}
+
+	requests = attacker.CreateQueryRequests(ctx, conf.Duration, conf.Workers, conf.Host, conf.AuthToken, true, true)
+	err = attacker.RunVegeta(ctx, requests, "post_streaming_query_with_cache", attackMap)
+	if err != nil {
+		return fmt.Errorf("Error while running POST operation on /v1/streaming_query with cache: %w", err)
 	}
 
 	zlog.Info(ctx).Str("Uuid", conf.Uuid).Msg("👋 Exiting ols-load-generator")
