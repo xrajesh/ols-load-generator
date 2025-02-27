@@ -81,6 +81,7 @@ func indexVegetaResults(ctx context.Context, metrics vegeta.Metrics, testName st
 		return fmt.Errorf("Failure while creating an indexer: %w", err)
 	}
 	workers, _ := strconv.Atoi(attackMap["Workers"])
+	queryOnly, _ := strconv.ParseBool(attackMap["QueryOnly"])
 	hostname, _ := os.Hostname()
 	resp, err := (*indexer).Index([]interface{}{Document{
 		Workload:       "ols-load-generator",
@@ -106,6 +107,7 @@ func indexVegetaResults(ctx context.Context, metrics vegeta.Metrics, testName st
 		BytesIn:        metrics.BytesIn.Mean,
 		BytesOut:       metrics.BytesOut.Mean,
 		Uuid:           attackMap["Uuid"],
+		QueryOnly:      queryOnly,
 	}}, indexers.IndexingOpts{
 		MetricName: testName,
 	})

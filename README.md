@@ -37,6 +37,7 @@ oc create secret generic kubeconfig-secret --from-file=kubeconfig=<YOUR-KUBECONF
 * `OLS_TEST_PROFILES` - List of metric profiles that contain queries to be executed on prometheus.
 * `OLS_TEST_ES_HOST`(Optional) - Elastic search host url. If not specified metrics will be indexed locally.
 * `OLS_TEST_ES_INDEX`(Optional) - Elastic search index name to store the data. If not specified metrics will be indexed locally.
+* `OLS_TEST_QUERY_ONLY`(Optional) - Flag to enable load tests only on `/v1/query` and `/v1/streaming_query` endpoints.
 
 #### **Example Usage**
 ```
@@ -80,13 +81,14 @@ DESCRIPTION:
 OPTIONS:
    --host value        --host localhost:6060 (default: "http://localhost:6060") [$OLS_TEST_HOST]
    --authtoken value   --authtoken authtoken [$OLS_TEST_AUTH_TOKEN]
-   --uuid value        --uuid f519d9b2-aa62-44ab-9ce8-4156b712f6d2 (default: "08fd0205-d2d8-4954-b83e-86226dd4e2ac") [$OLS_TEST_UUID]
+   --uuid value        --uuid f519d9b2-aa62-44ab-9ce8-4156b712f6d2 (default: "76d8f64d-2bf3-49ac-82c3-22011ddc2284") [$OLS_TEST_UUID]
    --duration value    --duration 1m (default: 1m0s) [$OLS_TEST_DURATION]
    --workers value     --workers 10 (default: 10) [$OLS_TEST_WORKERS]
    --eshost value      --eshost eshosturl [$OLS_TEST_ES_HOST]
    --esindex value     --esindex esindex [$OLS_TEST_ES_INDEX]
    --metricstep value  --metricstep 30 (default: 30) [$OLS_TEST_METRIC_STEP]
    --profiles value    --profiles metrics.yaml,metrics-report.yaml (default: "attacker/assets/profiles/metrics-report.yaml,attacker/assets/profiles/metrics-timeseries.yaml") [$OLS_TEST_PROFILES]
+   --queryonly         --query (default: false) [$OLS_TEST_QUERY_ONLY]
    --help, -h          show help
 ```
 #### Example Usage
@@ -114,6 +116,7 @@ OPTIONS:
    --start value       --start 1720410990 (default: 1720482385) [$OLS_TEST_START]
    --end value         --end 1720470990 (default: 1720485985) [$OLS_TEST_END]
    --profiles value    --profiles metrics.yaml,metrics-report.yaml (default: "attacker/assets/profiles/metrics-report.yaml,attacker/assets/profiles/metrics-timeseries.yaml") [$OLS_TEST_PROFILES]
+   --queryonly         --query (default: false) [$OLS_TEST_QUERY_ONLY]
    --help, -h          show help
 ```
 #### Example Usage

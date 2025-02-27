@@ -48,8 +48,15 @@ func getRequestCommons(ctx context.Context, endpoint, host, token string) (strin
 }
 
 // CreateQueryRequests returns the list of requests to perform POST operation on query endpoint.
-func CreateQueryRequests(ctx context.Context, duration time.Duration, workers int, host, token string, withCache bool) []map[string]interface{} {
-	url, headers := getRequestCommons(ctx, "/v1/query", host, token)
+func CreateQueryRequests(ctx context.Context, duration time.Duration, workers int, host, token string, withCache bool, streamResponse bool) []map[string]interface{} {
+	var subPath string
+	conversationIdPrefix := "00000000-0000-0000-0000-"
+	if streamResponse {
+		subPath = "streaming_query"
+	} else {
+		subPath = "query"
+	}
+	url, headers := getRequestCommons(ctx, fmt.Sprintf("/v1/%s", subPath), host, token)
 	hitSize := int(duration.Seconds()) * workers
 	var requests []map[string]interface{}
 
@@ -71,14 +78,20 @@ func CreateQueryRequests(ctx context.Context, duration time.Duration, workers in
 
 	body := make(map[string]string)
 	if withCache {
-		body["conversation_id"] = "00000000-0000-0000-0000-000000000000"
 		zlog.Info(ctx).Str("duration", duration.String()).Msg("preparing requests for POST operation on /v1/query with cache for")
 	} else {
 		zlog.Info(ctx).Str("duration", duration.String()).Msg("preparing requests for POST operation on /v1/query for")
 	}
 
 	for idx := 0; idx < hitSize; idx++ {
-		body["query"] = questionList.Questions[idx%len(questionList.Questions)]
+		modValue := idx % len(questionList.Questions)
+		body["query"] = questionList.Questions[modValue]
+		if withCache {
+			body["conversation_id"] = conversationIdPrefix + fmt.Sprintf("%012d", modValue)
+			if streamResponse {
+				body["conversation_id"] = conversationIdPrefix + fmt.Sprintf("%011d", modValue) + "0"
+			}
+		}
 		bodyBytes, err := json.Marshal(body)
 		if err != nil {
 			fmt.Errorf("Error marshaling body: %v", err)

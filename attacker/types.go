@@ -29,4 +29,5 @@ type Document struct {
 	BytesIn        float64        `json:"bytesIn"`
 	BytesOut       float64        `json:"bytesOut"`
 	Uuid           string         `json:"uuid"`
+	QueryOnly      bool           `json:"queryonly"`
 }
