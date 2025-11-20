@@ -19,8 +19,29 @@
 - query: sum(rate(ols_llm_calls_total[2m])) by (pod, container, namespace, provider, model)
   metricName: llmCallsTotal
 
+- query: sum(rate(ols_rest_api_calls_total[2m])) by (pod, container, namespace, provider, model)
+  metricName: restApiCallsTotal
+
 - query: sum(rate(ols_llm_calls_failures_total[2m])) by (pod, container, namespace)
   metricName: llmCallFailures
+
+- query: histogram_quantile(0.0, sum by (le, path, container, pod, namespace) (rate(ols_response_duration_seconds_bucket[2m])))
+  metricName: minApiLatency
+
+- query: sum by (path, container, pod, namespace) (rate(ols_response_duration_seconds_sum[2m])) / sum by (path, container, pod, namespace) (rate(ols_response_duration_seconds_count[2m]))
+  metricName: avgApiLatency
+
+- query: histogram_quantile(0.50, sum by (le, path, container, pod, namespace) (rate(ols_response_duration_seconds_bucket[2m])))
+  metricName: p50ApiLatency
+
+- query: histogram_quantile(0.95, sum by (le, path, container, pod, namespace) (rate(ols_response_duration_seconds_bucket[2m])))
+  metricName: p95ApiLatency
+
+- query: histogram_quantile(0.99, sum by (le, path, container, pod, namespace) (rate(ols_response_duration_seconds_bucket[2m])))
+  metricName: p99ApiLatency
+
+- query: histogram_quantile(1.0, sum by (le, path, container, pod, namespace) (rate(ols_response_duration_seconds_bucket[2m])))
+  metricName: maxApiLatency
 
 - query: (avg(irate(container_cpu_usage_seconds_total{name!="",container!="POD",namespace=~"openshift-lightspeed"}[2m]) * 100 and on (node) kube_node_role{role="worker"}) by (namespace, container)) > 0
   metricName: containerCPU-AggregatedWorkers

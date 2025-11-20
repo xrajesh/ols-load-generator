@@ -33,6 +33,14 @@
   metricName: avg-llm-token-received
   instant: true
 
+- query: max(max_over_time(rate(ols_rest_api_calls_total[2m])[{{.elapsed}}:])) by (pod, container, namespace, provider, model)
+  metricName: max-rest-api-calls-total
+  instant: true
+
+- query: avg(avg_over_time(rate(ols_rest_api_calls_total[2m])[{{.elapsed}}:])) by (pod, container, namespace, provider, model)
+  metricName: avg-rest-api-calls-total
+  instant: true
+
 - query: max(max_over_time(rate(ols_llm_calls_total[2m])[{{.elapsed}}:])) by (pod, container, namespace, provider, model)
   metricName: max-llm-calls-total
   instant: true
