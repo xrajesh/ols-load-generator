@@ -15,8 +15,12 @@ RUN dnf install -y \
         podman \
         python3-pip \
         gcc \
-        go && \
+        go \
+        pkgconf-pkg-config \
+        gpgme-devel && \
     dnf clean all
+
+RUN pkg-config --modversion gpgme
 
 # Set GO environment variables (to ensure it's set correctly)
 ENV GOPATH=/root/go
