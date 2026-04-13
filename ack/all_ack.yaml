@@ -1,4 +1,4 @@
-# File to acknowledge CI regressions in 10 workers test
+# File to acknowledge all the regressions at one place
 ---
 ack:
   - uuid: dummy_uuid_1
