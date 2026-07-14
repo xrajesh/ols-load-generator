@@ -1,5 +1,23 @@
 # OLS Load Generator - Development Guide for AI
 
+## Specs
+
+No `.ai/spec/` directory yet. Specifications will be added when the codebase matures.
+
+## Commands
+
+```bash
+make build    # Build the load generator binary
+make test     # Run tests
+make lint     # golangci-lint
+```
+
+## Conventions
+
+- Go codebase — standard Go project layout
+- Measures OLS performance under concurrent query load
+- Scrapes cluster Prometheus metrics for analysis
+
 ## Git and PR Workflow
 
 ### Commit Messages
