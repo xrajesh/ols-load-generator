@@ -8,8 +8,7 @@ No `.ai/spec/` directory yet. Specifications will be added when the codebase mat
 
 ```bash
 make build    # Build the load generator binary
-make test     # Run tests
-make lint     # golangci-lint
+make lint     # go fmt (auto-format Go files)
 ```
 
 ## Conventions
